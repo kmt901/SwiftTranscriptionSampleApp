@@ -15,22 +15,23 @@ class Recorder {
     private let transcriber: SpokenWordTranscriber
     var playerNode: AVAudioPlayerNode?
     
-    var story: Binding<Story>
-    
     var file: AVAudioFile?
     private let url: URL
 
-    init(transcriber: SpokenWordTranscriber, story: Binding<Story>) {
+    init(transcriber: SpokenWordTranscriber) {
         audioEngine = AVAudioEngine()
         self.transcriber = transcriber
-        self.story = story
         self.url = FileManager.default.temporaryDirectory
             .appending(component: UUID().uuidString)
             .appendingPathExtension(for: .wav)
     }
     
-    func record() async throws {
-        self.story.url.wrappedValue = url
+    func record(story: Binding<Story>) async throws {
+        let url = self.url
+        Task { @MainActor in
+           story.url.wrappedValue = url
+        }
+        
         guard await isAuthorized() else {
             print("user denied mic permission")
             return
@@ -41,18 +42,21 @@ class Recorder {
         try await transcriber.setUpTranscriber()
                 
         for await input in try await audioStream() {
+            // TODO: Fix - Sending task-isolated 'input' to main actor-isolated instance method 'streamAudioToTranscriber' risks causing data races between main actor-isolated and task-isolated uses
             try await self.transcriber.streamAudioToTranscriber(input)
         }
     }
     
-    func stopRecording() async throws {
+    func stopRecording(story: Binding<Story>) async throws {
         audioEngine.stop()
-        story.isDone.wrappedValue = true
+        Task { @MainActor in
+            story.isDone.wrappedValue = true
+        }
 
         try await transcriber.finishTranscribing()
 
-        Task {
-            self.story.title.wrappedValue = try await story.wrappedValue.suggestedTitle() ?? story.title.wrappedValue
+        Task { @MainActor in
+            story.title.wrappedValue = try await story.wrappedValue.suggestedTitle() ?? story.title.wrappedValue
         }
 
     }
@@ -79,6 +83,7 @@ class Recorder {
                                          format: audioEngine.inputNode.outputFormat(forBus: 0)) { [weak self] (buffer, time) in
             guard let self else { return }
             writeBufferToDisk(buffer: buffer)
+            // TODO: Fix - Task-isolated 'buffer' is passed as a 'sending' parameter; Uses in callee may race with later task-isolated uses
             self.outputContinuation?.yield(buffer)
         }
         

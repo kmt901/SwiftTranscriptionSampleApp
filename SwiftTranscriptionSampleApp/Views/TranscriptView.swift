@@ -27,7 +27,7 @@ struct TranscriptView: View {
     init(story: Binding<Story>) {
         self._story = story
         let transcriber = SpokenWordTranscriber(story: story)
-        recorder = Recorder(transcriber: transcriber, story: story)
+        recorder = Recorder(transcriber: transcriber)
         speechTranscriber = transcriber
     }
     
@@ -77,14 +77,16 @@ struct TranscriptView: View {
             if newValue == true {
                 Task {
                     do {
-                        try await recorder.record()
+                        // TODO: - Fix Sending main actor-isolated 'self.recorder' to nonisolated instance method 'record(story:)' risks causing data races between nonisolated and main actor-isolated uses
+                        try await recorder.record(story: $story)
                     } catch {
                         print("could not record: \(error)")
                     }
                 }
             } else {
                 Task {
-                    try await recorder.stopRecording()
+                    // TODO: - Sending main actor-isolated 'self.recorder' to nonisolated instance method 'stopRecording(story:)' risks causing data races between nonisolated and main actor-isolated uses
+                    try await recorder.stopRecording(story: $story)
                 }
             }
         }

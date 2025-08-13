@@ -9,8 +9,9 @@ import Foundation
 import Speech
 import SwiftUI
 
+@MainActor
 @Observable
-final class SpokenWordTranscriber: Sendable {
+final class SpokenWordTranscriber {
     private var inputSequence: AsyncStream<AnalyzerInput>?
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var transcriber: SpeechTranscriber?

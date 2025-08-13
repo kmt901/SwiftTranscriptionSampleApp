@@ -9,6 +9,7 @@ import Foundation
 import AVFoundation
 import FoundationModels
 
+@MainActor
 @Observable
 class Story: Identifiable {
     typealias StartTime = CMTime

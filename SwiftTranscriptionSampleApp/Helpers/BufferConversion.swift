@@ -6,7 +6,6 @@ Conversion code for audio inputs.
 */
 
 import Foundation
-// TODO: Warning to add '@preconcurrency' here
 import AVFoundation
 
 class BufferConverter {

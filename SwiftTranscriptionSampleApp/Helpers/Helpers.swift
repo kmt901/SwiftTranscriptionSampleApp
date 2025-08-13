@@ -9,13 +9,13 @@ import Foundation
 import AVFoundation
 import SwiftUI
 
-extension Story: Equatable {
+extension Story: @MainActor Equatable {
     static func == (lhs: Story, rhs: Story) -> Bool {
         lhs.id == rhs.id
     }
 }
 
-extension Story: Hashable {
+extension Story: @MainActor Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
@@ -105,7 +105,9 @@ extension TranscriptView {
         
         if isPlaying {
             recorder.playRecording()
+            // TODO: - Change this to a sleep task potentially?
             timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                // TODO: Fix - Main actor-isolated property 'currentPlaybackTime' can not be mutated from a Sendable closure and Main actor-isolated property 'recorder' can not be referenced from a Sendable closure
                 currentPlaybackTime = recorder.playerNode?.currentTime ?? 0.0
             }
         } else {
