@@ -6,6 +6,7 @@ Conversion code for audio inputs.
 */
 
 import Foundation
+// TODO: Warning to add '@preconcurrency' here
 import AVFoundation
 
 class BufferConverter {
@@ -42,6 +43,7 @@ class BufferConverter {
         var bufferProcessed = false
         
         let status = converter.convert(to: conversionBuffer, error: &nsError) { packetCount, inputStatusPointer in
+            // TODO: Fix error for concurrently executing code
             defer { bufferProcessed = true } // This closure can be called multiple times, but it only offers a single buffer.
             inputStatusPointer.pointee = bufferProcessed ? .noDataNow : .haveData
             return bufferProcessed ? nil : buffer
